@@ -354,19 +354,51 @@ function setMacros(cal, pro, carb, fat, meals) {
   document.getElementById('num-carb').innerHTML = `${fmt(carb,  600, 'g')} / 600g`;
   document.getElementById('num-fat').innerHTML  = `${fmt(fat,    75, 'g')} / ≤75g`;
   const rem = 4000 - cal;
-  const mealRows = meals.map(m => {
-    const sp = m.lastIndexOf(' ');
-    const label = m.substring(0, sp);
-    const val   = m.substring(sp + 1);
-    const empty = val === '-';
-    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 4px;border-radius:4px;background:${empty?'transparent':'#21262d'}">
-      <span style="color:${empty?'#3d4451':'#8b949e'};font-size:10px">${label}</span>
-      <span style="color:${empty?'#3d4451':'#e6edf3'};font-size:10px;font-weight:${empty?'400':'600'}">${val}</span>
-    </div>`;
-  }).join('');
+
+  const isNewFmt = meals.length > 0 && typeof meals[0] === 'object';
+  let mealsHtml = '';
+
+  if (isNewFmt) {
+    mealsHtml = meals.map(meal => {
+      const hasFoods = meal.foods && meal.foods.length > 0;
+      const mealCal = meal.cal || 0;
+      const empty = mealCal === 0 && !hasFoods;
+      const foodRows = hasFoods ? meal.foods.map(f => `
+        <div style="display:flex;align-items:center;gap:3px;padding:2px 0;border-top:1px solid #21262d;font-size:10px;min-width:0">
+          <span style="flex:1;color:#c9d1d9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${f.n}">${f.n}</span>
+          <span style="color:#555f6e;font-size:9px;white-space:nowrap;margin-right:2px">${f.qty}</span>
+          <span style="color:#a78bfa;font-size:9px;white-space:nowrap">${f.p}p</span>
+          <span style="color:#60a5fa;font-size:9px;white-space:nowrap;margin-left:2px">${f.c}c</span>
+          <span style="color:#f87171;font-size:9px;white-space:nowrap;margin-left:2px">${f.f}f</span>
+          <span style="color:#fbbf24;font-size:9px;font-weight:700;white-space:nowrap;margin-left:4px;min-width:24px;text-align:right">${f.cal}</span>
+        </div>`).join('') : '';
+      return `<div style="margin-bottom:6px;padding-bottom:5px;border-bottom:1px solid #21262d">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:${hasFoods?3:0}px">
+          <span style="font-size:10px;font-weight:700;color:${empty?'#3d4451':'#8b949e'}">${meal.n}</span>
+          <span style="font-size:10px;font-weight:700;color:${empty?'#3d4451':'#fbbf24'}">${mealCal ? mealCal+'cal' : '—'}</span>
+        </div>${foodRows}</div>`;
+    }).join('');
+  } else {
+    // Legacy string format
+    mealsHtml = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-bottom:5px">${
+      meals.map(m => {
+        const sp = m.lastIndexOf(' ');
+        const label = m.substring(0, sp);
+        const val   = m.substring(sp + 1);
+        const empty = val === '-';
+        return `<div style="display:flex;justify-content:space-between;padding:2px 4px;border-radius:4px;background:${empty?'transparent':'#21262d'}">
+          <span style="color:${empty?'#3d4451':'#8b949e'};font-size:10px">${label}</span>
+          <span style="color:${empty?'#3d4451':'#e6edf3'};font-size:10px;font-weight:600">${val}</span>
+        </div>`;
+      }).join('')
+    }</div>`;
+  }
+
   document.getElementById('macro-meals').innerHTML =
-    `<div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-bottom:5px">${mealRows}</div>` +
-    `<div style="font-size:10px;color:${rem > 0 ? '#fbbf24' : '#f87171'};text-align:right"><b>${rem > 0 ? rem.toLocaleString() + ' cal left' : '🔴 over by ' + Math.abs(rem)}</b></div>`;
+    mealsHtml +
+    `<div style="font-size:10px;color:${rem>0?'#fbbf24':'#f87171'};text-align:right;margin-top:4px;padding-top:4px;border-top:1px solid #21262d">
+      <b>${rem>0 ? rem.toLocaleString()+' cal left' : '🔴 over by '+Math.abs(rem)}</b>
+    </div>`;
 }
 
 const GARMIN_FALLBACK = [
@@ -422,10 +454,31 @@ async function loadGarmin() {
 }
 
 const MACRO_DATA = {
-  '2026-05-18': { cal:1138, pro:71.3, carb:176.8, fat:19, meals:['M1 683cal', 'M2 455cal', 'Pre -', 'Post -', 'M3 -', 'M4 -'] },
-  '2026-05-17': { cal:3591, pro:279, carb:482.4, fat:63.9, meals:['M1 586cal', 'M2 668cal', 'Pre -', 'Post 457cal', 'M3 362cal', 'M4 555cal', 'M5 486cal', 'M6 477cal'] },
-  '2026-05-16': { cal:2640, pro:195.8, carb:380.2, fat:39.7, meals:['🍳 M1 · 561cal','🍽️ M2 · 689cal','💪 Pre · 312cal','🏁 Post · 457cal','🍽️ M3 · 621cal','🍽️ M4 —'] },
-  '2026-05-15': { cal:3267, pro:312.2, carb:392.6, fat:55.8, meals:['🍳 M1 · 467cal','🍽️ M2 · 621cal','💪 Pre · 312cal','🏁 Post · 457cal','🍽️ M3 · 589cal','🍽️ M4 · 461cal','🍽️ M5 · 360cal'] },
+  '2026-05-18': { cal:1138, pro:71.3, carb:176.8, fat:19, meals:[
+    { n:'M1', cal:683, foods:[
+      { n:'Egg Whites',       qty:'3/4 cup', cal:95,  p:20,  c:1,    f:0.5 },
+      { n:"Dave's Bagel",     qty:'1',       cal:270, p:11,  c:52,   f:2   },
+      { n:'Sourdough',        qty:'40g',     cal:108, p:4,   c:21,   f:0.6 },
+      { n:'Banana',           qty:'100g',    cal:89,  p:1.1, c:22.8, f:0.3 },
+      { n:'Avocado',          qty:'35g',     cal:56,  p:0.7, c:3,    f:5.1 },
+      { n:'Veggies',          qty:'100g',    cal:35,  p:2,   c:7,    f:0.3 },
+      { n:'Honey',            qty:'10g',     cal:30,  p:0,   c:8,    f:0   },
+    ]},
+    { n:'M2', cal:455, foods:[
+      { n:'Cream of Rice',    qty:'40g',     cal:160, p:3,   c:36,   f:0   },
+      { n:'Ryse Whey',        qty:'40g',     cal:130, p:25,  c:5,    f:2   },
+      { n:'Blueberries',      qty:'70g',     cal:40,  p:0.5, c:10,   f:0.2 },
+      { n:'Honey',            qty:'10g',     cal:30,  p:0,   c:8,    f:0   },
+      { n:'Nat. PB',          qty:'1 tbsp',  cal:95,  p:4,   c:3,    f:8   },
+    ]},
+    { n:'Pre',  cal:0, foods:[] },
+    { n:'Post', cal:0, foods:[] },
+    { n:'M3',   cal:0, foods:[] },
+    { n:'M4',   cal:0, foods:[] },
+  ]},
+  '2026-05-17': { cal:3591, pro:279, carb:482.4, fat:63.9, meals:['M1 586cal','M2 668cal','Pre -','Post 457cal','M3 362cal','M4 555cal','M5 486cal','M6 477cal'] },
+  '2026-05-16': { cal:2640, pro:195.8, carb:380.2, fat:39.7, meals:['M1 561cal','M2 689cal','Pre 312cal','Post 457cal','M3 621cal','M4 -'] },
+  '2026-05-15': { cal:3267, pro:312.2, carb:392.6, fat:55.8, meals:['M1 467cal','M2 621cal','Pre 312cal','Post 457cal','M3 589cal','M4 461cal','M5 360cal'] },
 };
 
 function loadMacrosFromStorage() {
