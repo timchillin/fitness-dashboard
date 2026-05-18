@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<script type="application/json" id="cowork-artifact-meta">
+{
+  "name": "Fitness Dashboard",
+  "schemaVersion": 1,
+  "description": "Full fitness dashboard — live Garmin workout data + daily macro tracking with meal cards, progress bars, and donut chart",
+  "mcpTools": [
+    "mcp__6c0716b5-8606-4d50-9f8a-1e0b6b581c0d__list_activities"
+  ],
+  "mcpServerNames": [
+    "Garmin"
+  ]
+}
+</script>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fitness Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
+<style>
+:root { color-scheme: light; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #0d1117;
+  color: #e6edf3;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 13px;
+  padding: 12px;
+  min-height: 100vh;
+}
+.hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+.hdr-left { display: flex; align-items: center; gap: 10px; }
+.hdr-title { font-size: 14px; font-weight: 600; color: #e6edf3; }
+.hdr-date { font-size: 11px; color: #8b949e; }
+.hdr-right { display: flex; gap: 8px; flex-wrap: wrap; }
+.pill {
+  font-size: 11px; font-weight: 500; padding: 3px 9px;
+  border-radius: 20px; display: inline-flex; align-items: center; gap: 4px;
+}
+.pill-purple { background: #7F77DD22; color: #a78bfa; border: 1px solid #7F77DD44; }
+.pill-green  { background: #1D9E7522; color: #34d399; border: 1px solid #1D9E7544; }
+.pill-amber  { background: #EF9F2722; color: #fbbf24; border: 1px solid #EF9F2744; }
+.pill-blue   { background: #378ADD22; color: #60a5fa; border: 1px solid #378ADD44; }
+.pill-red    { background: #E24B4A22; color: #f87171; border: 1px solid #E24B4A44; }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.card {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.card-title {
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .05em; color: #8b949e; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 6px;
+}
+
+/* Macro bars */
+.macro-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.macro-label { font-size: 11px; color: #8b949e; width: 56px; flex-shrink: 0; }
+.bar-bg { flex: 1; height: 6px; background: #21262d; border-radius: 3px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 3px; }
+.macro-nums { font-size: 11px; color: #8b949e; min-width: 72px; text-align: right; }
+.macro-nums b { color: #e6edf3; }
+
+/* Exercise list */
+.ex-row {
+  display: flex; align-items: center; gap: 7px;
+  padding: 4px 0; border-bottom: 1px solid #21262d; font-size: 12px;
+}
+.ex-row:last-child { border-bottom: none; }
+.ex-badge {
+  width: 22px; height: 22px; border-radius: 5px;
+  background: #7F77DD22; color: #a78bfa;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 600; flex-shrink: 0;
+}
+.ex-name { flex: 1; color: #e6edf3; }
+.ex-scheme { font-size: 11px; color: #8b949e; white-space: nowrap; }
+
+/* Week grid */
+.week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 10px; }
+.day-box {
+  background: #161b22; border: 1px solid #30363d;
+  border-radius: 8px; padding: 6px 5px; text-align: center;
+}
+.day-box.today { border-color: #a78bfa; background: #7F77DD18; }
+.day-box.rest  { opacity: .7; }
+.day-name { font-size: 10px; font-weight: 600; color: #8b949e; margin-bottom: 3px; }
+.day-muscle { font-size: 11px; color: #e6edf3; line-height: 1.3; min-height: 28px; }
+.day-extra { margin-top: 3px; font-size: 9px; padding: 1px 5px; border-radius: 8px; display: inline-block; }
+.run-tag  { background: #1D9E7522; color: #34d399; }
+.rest-tag { background: #30363d; color: #8b949e; }
+.today-tag { background: #7F77DD33; color: #a78bfa; }
+
+/* Stat cards */
+.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 10px; }
+.stat-card {
+  background: #161b22; border: 1px solid #30363d; border-radius: 8px;
+  padding: 8px 10px; text-align: center;
+}
+.stat-label { font-size: 10px; color: #8b949e; margin-bottom: 3px; }
+.stat-val { font-size: 20px; font-weight: 600; }
+.stat-sub { font-size: 10px; color: #8b949e; margin-top: 1px; }
+
+/* Recent activity */
+.act-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 0; border-bottom: 1px solid #21262d; font-size: 12px;
+}
+.act-row:last-child { border-bottom: none; }
+.act-dot { width: 8px; height: 8px; border-radius: 50%; background: #7F77DD; flex-shrink: 0; }
+.act-name { flex: 1; color: #e6edf3; }
+.act-meta { color: #8b949e; font-size: 11px; text-align: right; }
+
+/* Footer */
+.footer {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 12px; background: #161b22; border: 1px solid #30363d;
+  border-radius: 8px; font-size: 11px; color: #8b949e;
+}
+
+/* Loading/error states */
+.loading { color: #8b949e; font-size: 12px; font-style: italic; padding: 4px 0; }
+.null-val { color: #30363d; font-size: 20px; font-weight: 600; }
+
+button.log-btn {
+  background: #7F77DD22; color: #a78bfa; border: 1px solid #7F77DD44;
+  border-radius: 6px; padding: 4px 10px; font-size: 11px; cursor: pointer;
+  margin-top: 6px; width: 100%;
+}
+button.log-btn:hover { background: #7F77DD44; }
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-left">
+    <div>
+      <div class="hdr-title">💪 Fitness Dashboard</div>
+      <div class="hdr-date" id="hdr-date">Loading...</div>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <span class="pill pill-purple" id="pill-weight">⚖️ 182.3 lbs</span>
+    <span class="pill pill-blue" id="pill-phase">📅 Phase 1 · Week 1</span>
+    <span class="pill pill-green">🚶 10k+ steps/day</span>
+  </div>
+</div>
+
+<div class="grid2">
+  <div class="card">
+    <div class="card-title">🍽️ Today's Macros</div>
+    <div id="macro-content">
+      <div class="macro-row">
+        <div class="macro-label">🔥 Cals</div>
+        <div class="bar-bg"><div class="bar-fill" id="bar-cal" style="background:#fbbf24;width:0%"></div></div>
+        <div class="macro-nums" id="num-cal"><b>—</b> / 3,000</div>
+      </div>
+      <div class="macro-row">
+        <div class="macro-label">🥩 Protein</div>
+        <div class="bar-bg"><div class="bar-fill" id="bar-pro" style="background:#a78bfa;width:0%"></div></div>
+        <div class="macro-nums" id="num-pro"><b>—</b> / 210g</div>
+      </div>
+      <div class="macro-row">
+        <div class="macro-label">🌾 Carbs</div>
+        <div class="bar-bg"><div class="bar-fill" id="bar-carb" style="background:#60a5fa;width:0%"></div></div>
+        <div class="macro-nums" id="num-carb"><b>—</b> / 360g</div>
+      </div>
+      <div class="macro-row">
+        <div class="macro-label">🥑 Fat</div>
+        <div class="bar-bg"><div class="bar-fill" id="bar-fat" style="background:#34d399;width:0%"></div></div>
+        <div class="macro-nums" id="num-fat"><b>—</b> / ≤50g</div>
+      </div>
+      <div id="macro-meals" style="margin-top:8px; padding-top:6px; border-top:1px solid #21262d; font-size:11px; color:#8b949e;"></div>
+    </div>
+    <button class="log-btn" onclick="sendPrompt('Log my macros for today')">+ Log macros in chat ↗</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title" id="workout-title">🏋️ Today's Workout</div>
+    <div id="workout-list" class="loading">Loading schedule...</div>
+    <div style="margin-top:7px;padding:5px 8px;background:#7F77DD18;border-radius:6px;font-size:10px;color:#a78bfa">
+      🌀 Daily waist: 10× vacuum + 10× ab contraction
+    </div>
+  </div>
+</div>
+
+<div>
+  <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#8b949e;margin-bottom:6px">📅 Weekly Split — X Frame Phase 1</div>
+  <div class="week-grid" id="week-grid"></div>
+</div>
+
+<div class="stat-grid" id="garmin-stats">
+  <div class="stat-card">
+    <div class="stat-label">🔋 Body Battery</div>
+    <div class="stat-val null-val" id="st-battery">—</div>
+    <div class="stat-sub">syncing...</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">💓 HRV</div>
+    <div class="stat-val null-val" id="st-hrv">—</div>
+    <div class="stat-sub">syncing...</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">😴 Sleep</div>
+    <div class="stat-val null-val" id="st-sleep">—</div>
+    <div class="stat-sub">syncing...</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">🎯 Readiness</div>
+    <div class="stat-val null-val" id="st-ready">—</div>
+    <div class="stat-sub">syncing...</div>
+  </div>
+</div>
+
+<div class="grid2">
+  <div class="card">
+    <div class="card-title">⚡ Recent Garmin Activity</div>
+    <div id="activity-list" class="loading">Fetching from Garmin...</div>
+  </div>
+  <div class="card">
+    <div class="card-title">📊 Weekly Macro Targets</div>
+    <div class="macro-row" style="margin-bottom:8px">
+      <div class="macro-label" style="width:70px">🔥 Calories</div>
+      <div style="flex:1; font-size:18px; font-weight:600; color:#fbbf24">3,000</div>
+      <div style="font-size:10px;color:#8b949e">Hard day</div>
+    </div>
+    <div class="macro-row" style="margin-bottom:8px">
+      <div class="macro-label" style="width:70px">🥩 Protein</div>
+      <div style="flex:1; font-size:18px; font-weight:600; color:#a78bfa">210g</div>
+      <div style="font-size:10px;color:#8b949e">200–220g</div>
+    </div>
+    <div class="macro-row" style="margin-bottom:8px">
+      <div class="macro-label" style="width:70px">🌾 Carbs</div>
+      <div style="flex:1; font-size:18px; font-weight:600; color:#60a5fa">360g</div>
+      <div style="font-size:10px;color:#8b949e">300–420g</div>
+    </div>
+    <div class="macro-row">
+      <div class="macro-label" style="width:70px">🥑 Fat</div>
+      <div style="flex:1; font-size:18px; font-weight:600; color:#34d399">≤50g</div>
+      <div style="font-size:10px;color:#8b949e">User cap</div>
+    </div>
+    <div style="margin-top:8px;padding-top:6px;border-top:1px solid #21262d;font-size:10px;color:#8b949e">
+      Phase 2 Lean Gain · Surplus +200–300 kcal/day<br>
+      Protein 1.2–1.5g/lb · 0.25–0.5% BW gain/wk
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  <span>🏆 J3U X Frame Hypertrophy · Tier 3 · <span style="color:#a78bfa">Phase 1 Week 1</span></span>
+  <span id="last-refresh" style="color:#8b949e">Refreshing...</span>
+</div>
+
+<script>
+const SCHEDULE = [
+  { day: 'Sun', label: '🔙 Pull A', tag: '', tagClass: '' },
+  { day: 'Mon', label: '🏋️ Shoulder Push', tag: '⚡ plyos + 🏃 run', tagClass: 'run-tag' },
+  { day: 'Tue', label: '🔙 Pull B', tag: '', tagClass: '' },
+  { day: 'Wed', label: '🦵 Ham Legs', tag: '', tagClass: '' },
+  { day: 'Thu', label: '😴 Rest', tag: 'active', tagClass: 'rest-tag' },
+  { day: 'Fri', label: '🦵 Legs', tag: '', tagClass: '' },
+  { day: 'Sat', label: '💪 Chest Push', tag: '⚡ plyos + 🏃 run', tagClass: 'run-tag' },
+];
+
+const WORKOUTS = {
+  0: { title: '🔙 Pull A', rir: 'RIR 2', exercises: [
+    { o:'A1', n:'Lat Bias Pulldown', s:'3 × 8–12' },
+    { o:'B1', n:'Upper Back Bias Row', s:'2 × 8–12' },
+    { o:'C1', n:'Lat Bias Row', s:'3 × 10–15' },
+    { o:'D1', n:'Upper Back Bias Row', s:'2 × 12–20' },
+    { o:'E1', n:'DB Preacher Curl', s:'3 × 10–15' },
+    { o:'F1', n:'Hammer Cable Curl', s:'3 × 10–15' },
+  ]},
+  1: { title: '🏋️ Shoulder Focused Push + ⚡ Plyos + 🏃 Run', rir: 'RIR 2', exercises: [
+    { o:'A1', n:'Machine Lateral Raise', s:'4 × 10–15' },
+    { o:'B1', n:'Shoulder Press Machine', s:'3 × 8–12' },
+    { o:'C1', n:'Close Grip Press', s:'3 × 8–12' },
+    { o:'D1', n:'Reverse Cable Fly', s:'3 × 10–15' },
+    { o:'E1', n:'Overhead Tricep Extension', s:'4 × 10–15' },
+    { o:'E2', n:'Abdominal Crunch', s:'4 × 10–15' },
+  ]},
+  2: { title: '🔙 Pull B', rir: 'RIR 2', exercises: [
+    { o:'A1', n:'Upper Back Bias Pulldown', s:'3 × 10–15' },
+    { o:'B1', n:'Upper Back Bias Row', s:'3 × 8–12' },
+    { o:'C1', n:'Lat Row of Choice', s:'2 × 8–12' },
+    { o:'D1', n:'Lat Pulldown of Choice', s:'2 × 12–20' },
+    { o:'E1', n:'Incline Cable Curl', s:'3 × 10–15' },
+    { o:'F1', n:'Preacher DB Hammer Curl', s:'3 × 10–15' },
+  ]},
+  3: { title: '🦵 Hamstring Focused Legs', rir: 'RIR 2', exercises: [
+    { o:'A1', n:'Lying Hamstring Curl', s:'4 × 8–12' },
+    { o:'B1', n:'RDL', s:'2 × 8–12' },
+    { o:'C1', n:'Front Foot Elevated Split Squat', s:'3 × 10–15' },
+    { o:'D1', n:'Adductor Machine', s:'3 × 10–15' },
+    { o:'E1', n:'Straight Leg Calf Raise', s:'4 × 6–10' },
+  ]},
+  4: { title: '😴 Rest + Active Recovery', rir: '', exercises: [] },
+  5: { title: '🦵 Legs (Quad Focus)', rir: 'RIR 2', exercises: [
+    { o:'A1', n:'Seated Hamstring Curl', s:'4 × 8–12' },
+    { o:'B1', n:'Squat of Choice', s:'2 × 8–12' },
+    { o:'C1', n:'Leg Press of Choice', s:'3 × 12–20' },
+    { o:'D1', n:'Adductor Machine', s:'2 × 10–15' },
+    { o:'E1', n:'Quad Extension', s:'3 × 10–15' },
+    { o:'F1', n:'Straight Leg Calf Raise', s:'4 × 12–16' },
+  ]},
+  6: { title: '💪 Chest Focused Push + ⚡ Plyos + 🏃 Run', rir: 'RIR 2', exercises: [
+    { o:'A1', n:'Lateral Raise Machine', s:'4 × 10–15' },
+    { o:'B1', n:'Flat DB Press', s:'3 × 8–12' },
+    { o:'C1', n:'Incline Hammer Strength Press', s:'3 × 8–12' },
+    { o:'D1', n:'Pec Deck Fly', s:'2 × 10–15' },
+    { o:'D2', n:'Reverse Pec Deck Fly', s:'3 × 12–20' },
+    { o:'E1', n:'Overhand Pushdown', s:'4 × 12–20' },
+  ]},
+};
+
+function getToday() {
+  const d = new Date();
+  return { dow: d.getDay(), dateStr: d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}) };
+}
+
+function renderHeader() {
+  const { dateStr } = getToday();
+  document.getElementById('hdr-date').textContent = dateStr;
+}
+
+function renderWeekGrid() {
+  const { dow } = getToday();
+  const grid = document.getElementById('week-grid');
+  const dates = [0,1,2,3,4,5,6].map(i => {
+    const d = new Date();
+    d.setDate(d.getDate() - dow + i);
+    return d;
+  });
+  grid.innerHTML = SCHEDULE.map((s, i) => {
+    const isToday = i === dow;
+    const dateLabel = dates[i].toLocaleDateString('en-US',{month:'numeric',day:'numeric'});
+    const restClass = s.label.includes('Rest') ? ' rest' : '';
+    const todayClass = isToday ? ' today' : '';
+    const tagHtml = isToday
+      ? `<span class="day-extra today-tag">today</span>`
+      : s.tag ? `<span class="day-extra ${s.tagClass}">${s.tag}</span>` : '';
+    return `<div class="day-box${todayClass}${restClass}">
+      <div class="day-name">${s.day} ${dateLabel}</div>
+      <div class="day-muscle">${s.label}</div>
+      ${tagHtml}
+    </div>`;
+  }).join('');
+}
+
+function renderTodayWorkout() {
+  const { dow } = getToday();
+  const w = WORKOUTS[dow];
+  document.getElementById('workout-title').textContent = w.title;
+  const list = document.getElementById('workout-list');
+  if (w.exercises.length === 0) {
+    list.innerHTML = `<div style="color:#8b949e;font-size:12px;padding:8px 0">🌿 Rest day — walk, stretch, daily waist training<br><span style="color:#34d399">Hit 10,000+ steps today!</span></div>`;
+    return;
+  }
+  const rirPill = w.rir ? `<span style="font-size:10px;background:#30363d;color:#8b949e;padding:2px 7px;border-radius:8px;margin-bottom:6px;display:inline-block">${w.rir} all sets · Phase 1</span>` : '';
+  const isRunDay = (dow === 1 || dow === 6);
+  const plyoBlock = isRunDay ? `<div style="margin-bottom:8px;padding:7px 9px;background:#34d39912;border-radius:7px;border:1px solid #34d39930">
+    <div style="font-size:10px;font-weight:600;color:#34d399;margin-bottom:5px">&#9889; PLYO PRIMER &#8212; before run (~10 min, 45s rest)</div>
+    <div class="ex-row"><div class="ex-badge" style="background:#34d39920;color:#34d399">1</div><div class="ex-name">Pogo Hops <span style="color:#8b949e;font-size:10px">min ground contact</span></div><div class="ex-scheme">3 x 20</div></div>
+    <div class="ex-row"><div class="ex-badge" style="background:#34d39920;color:#34d399">2</div><div class="ex-name">Lateral Bounds <span style="color:#8b949e;font-size:10px">stick 1s, explode</span></div><div class="ex-scheme">3 x 8 ea</div></div>
+    <div class="ex-row"><div class="ex-badge" style="background:#34d39920;color:#34d399">3</div><div class="ex-name">Single-Leg Box Jump <span style="color:#8b949e;font-size:10px">full hip ext</span></div><div class="ex-scheme">2 x 5 ea</div></div>
+    <div class="ex-row"><div class="ex-badge" style="background:#34d39920;color:#34d399">4</div><div class="ex-name">Ankle Hops <span style="color:#8b949e;font-size:10px">stiff knees, Achilles</span></div><div class="ex-scheme">2 x 15</div></div>
+    <div style="margin-top:5px;font-size:10px;color:#34d399">&#8594; then jog 20-25 min @ 60-70% max HR</div>
+  </div>` : '';
+  list.innerHTML = rirPill + plyoBlock + w.exercises.map(e =>
+    `<div class="ex-row">
+      <div class="ex-badge">${e.o}</div>
+      <div class="ex-name">${e.n}</div>
+      <div class="ex-scheme">${e.s}</div>
+    </div>`
+  ).join('');
+}
+
+function setMacros(cal, pro, carb, fat, meals) {
+  const pct = (v, max) => Math.min(100, Math.round(v / max * 100));
+  const over = (v, max) => v > max;
+  const barEl = (id, v, max, color, overColor) => {
+    const el = document.getElementById(id);
+    el.style.width = pct(v, max) + '%';
+    el.style.background = over(v, max) ? overColor : color;
+  };
+  barEl('bar-cal',  cal,  3000, '#fbbf24', '#f87171');
+  barEl('bar-pro',  pro,   210, '#a78bfa', '#f87171');
+  barEl('bar-carb', carb,  360, '#60a5fa', '#f87171');
+  barEl('bar-fat',  fat,   50,  '#34d399', '#f87171');
+  const fmt = (v, max, unit) => over(v, max)
+    ? `<b style="color:#f87171">${v}${unit} ⚠️</b>`
+    : `<b>${v}${unit}</b>`;
+  document.getElementById('num-cal').innerHTML  = `${fmt(cal,  3000, '')} / 3,000`;
+  document.getElementById('num-pro').innerHTML  = `${fmt(pro,   210, 'g')} / 210g`;
+  document.getElementById('num-carb').innerHTML = `${fmt(carb,  360, 'g')} / 360g`;
+  document.getElementById('num-fat').innerHTML  = `${fmt(fat,    50, 'g')} / ≤50g`;
+  const rem = 3000 - cal;
+  const mealTags = meals.map(m =>
+    `<span style="background:#21262d;padding:2px 7px;border-radius:8px;margin-right:4px;margin-bottom:3px;display:inline-block">${m}</span>`
+  ).join('');
+  document.getElementById('macro-meals').innerHTML =
+    `<div style="margin-bottom:4px">${mealTags}</div><span style="color:${rem > 0 ? '#fbbf24' : '#f87171'}"><b>${rem > 0 ? rem.toLocaleString() + ' cal remaining' : '🔴 over by ' + Math.abs(rem) + ' cal'}</b></span>`;
+}
+
+async function loadGarmin() {
+  try {
+    const snap = await window.cowork.callMcpTool(
+      'mcp__6c0716b5-8606-4d50-9f8a-1e0b6b581c0d__get_wellness_snapshot', {}
+    );
+    if (snap) {
+      const bb = snap.body_battery;
+      const hrv = snap.hrv;
+      const sleep = snap.sleep;
+      const ready = snap.training_readiness;
+      const bbEl = document.getElementById('st-battery');
+      if (bb != null) { bbEl.textContent = bb; bbEl.className = 'stat-val'; bbEl.style.color = bb > 60 ? '#34d399' : bb > 30 ? '#fbbf24' : '#f87171'; document.querySelector('#garmin-stats .stat-card:nth-child(1) .stat-sub').textContent = bb > 60 ? 'High energy' : bb > 30 ? 'Moderate' : 'Low'; }
+      else { bbEl.textContent = '—'; bbEl.className = 'null-val'; }
+      const hrvEl = document.getElementById('st-hrv');
+      if (hrv != null) { hrvEl.textContent = hrv; hrvEl.className = 'stat-val'; hrvEl.style.color = '#a78bfa'; document.querySelector('#garmin-stats .stat-card:nth-child(2) .stat-sub').textContent = 'ms last night'; }
+      const sleepEl = document.getElementById('st-sleep');
+      if (sleep != null) { const hrs = (sleep / 3600).toFixed(1); sleepEl.textContent = hrs + 'h'; sleepEl.className = 'stat-val'; sleepEl.style.color = parseFloat(hrs) >= 7 ? '#34d399' : '#fbbf24'; document.querySelector('#garmin-stats .stat-card:nth-child(3) .stat-sub').textContent = parseFloat(hrs) >= 7 ? 'Good' : 'Below target'; }
+      const readyEl = document.getElementById('st-ready');
+      if (ready != null) { readyEl.textContent = ready; readyEl.className = 'stat-val'; readyEl.style.color = ready >= 70 ? '#34d399' : ready >= 40 ? '#fbbf24' : '#f87171'; document.querySelector('#garmin-stats .stat-card:nth-child(4) .stat-sub').textContent = ready >= 70 ? 'Ready to train' : ready >= 40 ? 'Moderate' : 'Recover'; }
+    }
+  } catch(e) { console.log('Wellness snapshot error:', e); }
+
+  try {
+    const acts = await window.cowork.callMcpTool(
+      'mcp__6c0716b5-8606-4d50-9f8a-1e0b6b581c0d__list_activities',
+      { limit: 5 }
+    );
+    const el = document.getElementById('activity-list');
+    if (acts && acts.length > 0) {
+      el.innerHTML = acts.map(a => {
+        const dt = new Date(a.start_time);
+        const dateStr = dt.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+        const dur = a.duration_seconds ? Math.round(a.duration_seconds / 60) + 'm' : '';
+        const cal = a.calories ? a.calories + ' cal' : '';
+        const hr = a.average_heart_rate_in_beats_per_minute ? a.average_heart_rate_in_beats_per_minute + ' bpm' : '';
+        return `<div class="act-row">
+          <div class="act-dot"></div>
+          <div class="act-name">💪 ${a.activity_name || a.activity_type}</div>
+          <div class="act-meta">${dateStr} · ${dur}<br>${cal} · ${hr}</div>
+        </div>`;
+      }).join('');
+    } else {
+      el.innerHTML = `<div class="loading">No recent activities found</div>`;
+    }
+  } catch(e) { document.getElementById('activity-list').innerHTML = `<div class="loading">Could not load activities</div>`; }
+}
+
+function loadMacrosFromStorage() {
+  setMacros(2378, 223.9, 286.8, 42.4, [
+    '🍳 Meal 1 ✅', '🍽️ Meal 2 ✅', '💪 Pre-WO ✅',
+    '🏁 Post-WO ✅', '🍽️ Meal 3 ✅', '🍽️ Meal 4 —', '🍽️ Meal 5 —'
+  ]);
+}
+
+function init() {
+  renderHeader();
+  renderWeekGrid();
+  renderTodayWorkout();
+  loadMacrosFromStorage();
+  loadGarmin();
+  document.getElementById('last-refresh').textContent =
+    'Updated ' + new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+}
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<script type="application/json" id="cowork-artifact-meta">
+{
+  "name": "Fitness Dashboard",
+  "schemaVersion": 1,
+  "description": "Daily macro tracking dashboard — shows all meals, progress bars for cal/protein/carbs/fat/fiber vs goal, and a per-meal calorie chart. Updated every time a meal is logged.",
+  "mcpTools": [
+    "mcp__6c0716b5-8606-4d50-9f8a-1e0b6b581c0d__get_wellness_snapshot",
+    "mcp__6c0716b5-8606-4d50-9f8a-1e0b6b581c0d__list_activities"
+  ],
+  "mcpServerNames": [
+    "Garmin",
+    "Garmin"
+  ]
+}
+</script>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fitness Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; font-size: 11px; background: #f7f7f5; color: #1a1a1a; padding: 10px 12px; line-height: 1.4; }
+  h1 { font-size: 12px; font-weight: 600; color: #111; margin-bottom: 1px; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; flex-wrap: wrap; gap: 2px; }
+  .sub { font-size: 9.5px; color: #888; }
+  .goals-bar { font-size: 9.5px; color: #999; text-align: right; }
+  .goals-bar span { margin-left: 6px; font-weight: 500; }
+  .col-p { color: #2874b8; }
+  .col-c { color: #b87000; }
+  .col-f { color: #1a7a50; }
+  .col-fi { color: #a03a10; }
+  .col-warn { color: #c00; }
+
+  .progress-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 8px; }
+  .prog-card { background: #fff; border: 0.5px solid #e0e0e0; border-radius: 6px; padding: 5px 7px; }
+  .prog-label { font-size: 9px; color: #999; margin-bottom: 2px; }
+  .prog-vals { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 3px; }
+  .prog-cur { font-size: 12px; font-weight: 600; color: #111; }
+  .prog-goal { font-size: 9px; color: #bbb; }
+  .prog-bar { height: 3px; background: #eee; border-radius: 2px; overflow: hidden; }
+  .prog-fill { height: 100%; border-radius: 2px; }
+  .prog-fill.cal  { background: #555; }
+  .prog-fill.pro  { background: #2874b8; }
+  .prog-fill.carb { background: #b87000; }
+  .prog-fill.fat  { background: #1a7a50; }
+  .prog-fill.fib  { background: #a03a10; }
+  .prog-fill.over { background: #c00; }
+
+  .chart-wrap { background: #fff; border: 0.5px solid #e0e0e0; border-radius: 6px; padding: 8px; margin-bottom: 8px; }
+  .chart-title { font-size: 9.5px; font-weight: 600; color: #888; margin-bottom: 6px; letter-spacing: 0.04em; text-transform: uppercase; }
+  .chart-inner { position: relative; height: 120px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 10px; }
+  .section { background: #fff; border: 0.5px solid #e0e0e0; border-radius: 6px; margin-bottom: 6px; overflow: hidden; }
+  .sec-title { font-size: 9.5px; font-weight: 600; color: #888; padding: 4px 8px; background: #f4f4f2; border-bottom: 0.5px solid #e8e8e8; letter-spacing: 0.03em; text-transform: uppercase; }
+  th { text-align: right; padding: 3px 6px; color: #aaa; font-weight: 500; font-size: 9px; }
+  th:first-child { text-align: left; }
+  td { padding: 3px 6px; text-align: right; color: #555; border-top: 0.5px solid #f0f0f0; }
+  td:first-child { text-align: left; color: #222; }
+  tr:nth-child(even) td { background: #fafaf8; }
+  tr.total td { font-weight: 600; color: #111; background: #f4f4f2; border-top: 0.5px solid #ddd; }
+  .empty { color: #ccc; font-style: italic; font-size: 9.5px; padding: 5px 8px; }
+  .date { font-size: 9px; color: #bbb; margin-top: 6px; text-align: right; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>📊 May 15, 2026</h1>
+    <div class="sub">⚖️ Weigh-in: 182.3 lbs &nbsp;·&nbsp; Phase 2 Lean Gain · Hard day 🏋️</div>
+  </div>
+  <div class="goals-bar">
+    🎯 <span>3,000 cal</span>
+    <span class="col-p">210g pro</span>
+    <span class="col-c">360g carb</span>
+    <span class="col-f">≤50g fat</span>
+    <span class="col-fi">30g fib</span>
+  </div>
+</div>
+
+<div class="progress-row">
+  <div class="prog-card">
+    <div class="prog-label">Calories</div>
+    <div class="prog-vals"><span class="prog-cur">2,378</span><span class="prog-goal">/ 3,000</span></div>
+    <div class="prog-bar"><div class="prog-fill cal" style="width:79.3%"></div></div>
+  </div>
+  <div class="prog-card">
+    <div class="prog-label col-p">Protein</div>
+    <div class="prog-vals"><span class="prog-cur col-warn">223.9g</span><span class="prog-goal">/ 210g</span></div>
+    <div class="prog-bar"><div class="prog-fill over" style="width:100%"></div></div>
+  </div>
+  <div class="prog-card">
+    <div class="prog-label col-c">Carbs</div>
+    <div class="prog-vals"><span class="prog-cur col-c">286.8g</span><span class="prog-goal">/ 360g</span></div>
+    <div class="prog-bar"><div class="prog-fill carb" style="width:79.7%"></div></div>
+  </div>
+  <div class="prog-card">
+    <div class="prog-label col-f">Fat</div>
+    <div class="prog-vals"><span class="prog-cur col-f">42.4g</span><span class="prog-goal">/ 50g</span></div>
+    <div class="prog-bar"><div class="prog-fill fat" style="width:84.8%"></div></div>
+  </div>
+  <div class="prog-card">
+    <div class="prog-label col-fi">Fiber</div>
+    <div class="prog-vals"><span class="prog-cur col-fi">23.2g</span><span class="prog-goal">/ 30g</span></div>
+    <div class="prog-bar"><div class="prog-fill fib" style="width:77.3%"></div></div>
+  </div>
+</div>
+
+<div class="chart-wrap">
+  <div class="chart-title">Calories by meal</div>
+  <div class="chart-inner">
+    <canvas id="mealChart" role="img" aria-label="Calories per meal bar chart">Meal 1: 559, Pre-WO: 311, Post-WO: 380, Meal 2: 794, Meal 3: 334</canvas>
+  </div>
+</div>
+
+<div class="section">
+  <div class="sec-title">🍽️ Meal 1</div>
+  <table>
+    <thead><tr><th>Food</th><th>Qty</th><th>Cal</th><th class="col-p">Pro</th><th class="col-c">Carb</th><th class="col-f">Fat</th><th class="col-fi">Fib</th></tr></thead>
+    <tbody>
+      <tr><td>Egg whites</td><td>3/4 cup</td><td>95</td><td class="col-p">20g</td><td class="col-c">1g</td><td class="col-f">0.5g</td><td class="col-fi">0g</td></tr>
+      <tr><td>Banana</td><td>90g</td><td>80</td><td class="col-p">1g</td><td class="col-c">21g</td><td class="col-f">0.3g</td><td class="col-fi">2.3g</td></tr>
+      <tr><td>Honey</td><td>5g</td><td>15</td><td class="col-p">0g</td><td class="col-c">4g</td><td class="col-f">0g</td><td class="col-fi">0g</td></tr>
+      <tr><td>Dave's KBB Bagel</td><td>1 bagel</td><td>270</td><td class="col-p">11g</td><td class="col-c">52g</td><td class="col-f">2g</td><td class="col-fi">3g</td></tr>
+      <tr><td>Avocado</td><td>40g</td><td>64</td><td class="col-p">0.8g</td><td class="col-c">3.4g</td><td class="col-f">5.9g</td><td class="col-fi">2.7g</td></tr>
+      <tr><td>Veggies</td><td>100g</td><td>35</td><td class="col-p">2g</td><td class="col-c">7g</td><td class="col-f">0.3g</td><td class="col-fi">2.5g</td></tr>
+      <tr class="total"><td colspan="2">Total</td><td>559</td><td class="col-p">34.8g</td><td class="col-c">88.4g</td><td class="col-f">9g</td><td class="col-fi">10.5g</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="section">
+  <div class="sec-title">🍽️ Meal 2</div>
+  <div class="empty">not logged yet</div>
+</div>
+
+<div class="section">
+  <div class="sec-title">💪 Pre-Workout Meal</div>
+  <table>
+    <thead><tr><th>Food</th><th>Qty</th><th>Cal</th><th class="col-p">Pro</th><th class="col-c">Carb</th><th class="col-f">Fat</th><th class="col-fi">Fib</th></tr></thead>
+    <tbody>
+      <tr><td>Cream of Rice</td><td>30g</td><td>109</td><td class="col-p">2g</td><td class="col-c">24g</td><td class="col-f">0g</td><td class="col-fi">0.3g</td></tr>
+      <tr><td>Ryse Blueberry Whey</td><td>40g</td><td>130</td><td class="col-p">25g</td><td class="col-c">4g</td><td class="col-f">2g</td><td class="col-fi">0g</td></tr>
+      <tr><td>Blueberries</td><td>100g</td><td>57</td><td class="col-p">0.7g</td><td class="col-c">14g</td><td class="col-f">0.3g</td><td class="col-fi">2.4g</td></tr>
+      <tr><td>Honey</td><td>5g</td><td>15</td><td class="col-p">0g</td><td class="col-c">4g</td><td class="col-f">0g</td><td class="col-fi">0g</td></tr>
+      <tr class="total"><td colspan="2">Total</td><td>311</td><td class="col-p">27.7g</td><td class="col-c">46g</td><td class="col-f">2.3g</td><td class="col-fi">2.7g</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="section">
+  <div class="sec-title">🏁 Post-Workout Meal</div>
+  <table>
+    <thead><tr><th>Food</th><th>Qty</th><th>Cal</th><th class="col-p">Pro</th><th class="col-c">Carb</th><th class="col-f">Fat</th><th class="col-fi">Fib</th></tr></thead>
+    <tbody>
+      <tr><td>Cap'n Crunch Berries</td><td>1 srv (27g)</td><td>160</td><td class="col-p">2g</td><td class="col-c">33g</td><td class="col-f">2g</td><td class="col-fi">1g</td></tr>
+      <tr><td>Dymatize ISO100 Whey</td><td>1 scoop</td><td>120</td><td class="col-p">25g</td><td class="col-c">3g</td><td class="col-f">0.5g</td><td class="col-fi">0g</td></tr>
+      <tr><td>Almond Milk (unsw.)</td><td>1 cup</td><td>30</td><td class="col-p">1g</td><td class="col-c">1g</td><td class="col-f">2.5g</td><td class="col-fi">1g</td></tr>
+      <tr><td>Rice Cakes (plain)</td><td>2 cakes</td><td>70</td><td class="col-p">1.4g</td><td class="col-c">14.4g</td><td class="col-f">0.6g</td><td class="col-fi">0.6g</td></tr>
+      <tr class="total"><td colspan="2">Total</td><td>380</td><td class="col-p">29.4g</td><td class="col-c">51.4g</td><td class="col-f">5.6g</td><td class="col-fi">2.6g</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="section">
+  <div class="sec-title">🍽️ Meal 2</div>
+  <table>
+    <thead><tr><th>Food</th><th>Qty</th><th>Cal</th><th class="col-p">Pro</th><th class="col-c">Carb</th><th class="col-f">Fat</th><th class="col-fi">Fib</th></tr></thead>
+    <tbody>
+      <tr><td>Chicken breast</td><td>190g</td><td>314</td><td class="col-p">59g</td><td class="col-c">0g</td><td class="col-f">6.8g</td><td class="col-fi">0g</td></tr>
+      <tr><td>Egg Life pasta</td><td>1 srv</td><td>180</td><td class="col-p">24g</td><td class="col-c">2g</td><td class="col-f">2.5g</td><td class="col-fi">0g</td></tr>
+      <tr><td>CF rolls</td><td>2 rolls</td><td>220</td><td class="col-p">4g</td><td class="col-c">40g</td><td class="col-f">6g</td><td class="col-fi">2g</td></tr>
+      <tr><td>Beet salad (small)</td><td>1 srv</td><td>80</td><td class="col-p">2g</td><td class="col-c">18g</td><td class="col-f">2g</td><td class="col-fi">3g</td></tr>
+      <tr class="total"><td colspan="2">Total</td><td>794</td><td class="col-p">89g</td><td class="col-c">60g</td><td class="col-f">17.3g</td><td class="col-fi">5g</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="section">
+  <div class="sec-title">🍽️ Meal 3</div>
+  <table>
+    <thead><tr><th>Food</th><th>Qty</th><th>Cal</th><th class="col-p">Pro</th><th class="col-c">Carb</th><th class="col-f">Fat</th><th class="col-fi">Fib</th></tr></thead>
+    <tbody>
+      <tr><td>Pineapple</td><td>200g</td><td>104</td><td class="col-p">1g</td><td class="col-c">27g</td><td class="col-f">0.2g</td><td class="col-fi">2.4g</td></tr>
+      <tr><td>Core Power Elite shake</td><td>14 fl oz</td><td>230</td><td class="col-p">42g</td><td class="col-c">14g</td><td class="col-f">8g</td><td class="col-fi">0g</td></tr>
+      <tr class="total"><td colspan="2">Total</td><td>334</td><td class="col-p">43g</td><td class="col-c">41g</td><td class="col-f">8.2g</td><td class="col-fi">2.4g</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="section">
+  <div class="sec-title">🍽️ Meal 4</div>
+  <div class="empty">not logged yet</div>
+</div>
+
+<div class="section">
+  <div class="sec-title">🍽️ Meal 5</div>
+  <div class="empty">not logged yet</div>
+</div>
+
+<div class="section">
+  <div class="sec-title">📈 Daily Totals</div>
+  <table>
+    <thead><tr><th></th><th>Cal</th><th class="col-p">Pro</th><th class="col-c">Carb</th><th class="col-f">Fat</th><th class="col-fi">Fib</th></tr></thead>
+    <tbody>
+      <tr><td>So far</td><td>2,378</td><td class="col-warn">223.9g ⚠️</td><td class="col-c">286.8g</td><td class="col-f">42.4g</td><td class="col-fi">23.2g</td></tr>
+      <tr><td style="color:#aaa">Goal</td><td style="color:#aaa">3,000</td><td class="col-p" style="opacity:0.5">210g</td><td class="col-c" style="opacity:0.5">360g</td><td class="col-f" style="opacity:0.5">50g</td><td class="col-fi" style="opacity:0.5">30g</td></tr>
+      <tr class="total"><td>Remaining</td><td>622</td><td class="col-p">—</td><td class="col-c">73.2g</td><td class="col-f">7.6g</td><td class="col-fi">6.8g</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="date">Last updated: Meal 3 · May 15, 2026</div>
+
+<script>
+new Chart(document.getElementById('mealChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Meal 1', 'Meal 2 (empty)', 'Pre-WO', 'Post-WO', 'Meal 2', 'Meal 3', 'Meal 4', 'Meal 5'],
+    datasets: [{
+      data: [559, 0, 311, 380, 794, 334, 0, 0],
+      backgroundColor: ['#555','#eee','#2874b8','#1a7a50','#555','#555','#eee','#eee'],
+      borderRadius: 3,
+      borderSkipped: false
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y} cal` } } },
+    scales: {
+      x: { ticks: { color: '#aaa', font: { size: 9 } }, grid: { display: false } },
+      y: { ticks: { color: '#aaa', font: { size: 9 }, callback: v => v + ' cal' }, grid: { color: '#f0f0f0' } }
+    }
+  }
+});
+</script>
+</body>
+</html>
