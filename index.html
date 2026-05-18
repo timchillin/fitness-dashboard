@@ -353,12 +353,20 @@ function setMacros(cal, pro, carb, fat, meals) {
   document.getElementById('num-pro').innerHTML  = `${fmt(pro,   190, 'g')} / 190g`;
   document.getElementById('num-carb').innerHTML = `${fmt(carb,  600, 'g')} / 600g`;
   document.getElementById('num-fat').innerHTML  = `${fmt(fat,    75, 'g')} / ≤75g`;
-  const rem = 3250 - cal;
-  const mealTags = meals.map(m =>
-    `<span style="background:#21262d;padding:2px 7px;border-radius:8px;margin-right:4px;margin-bottom:3px;display:inline-block">${m}</span>`
-  ).join('');
+  const rem = 4000 - cal;
+  const mealRows = meals.map(m => {
+    const sp = m.lastIndexOf(' ');
+    const label = m.substring(0, sp);
+    const val   = m.substring(sp + 1);
+    const empty = val === '-';
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 4px;border-radius:4px;background:${empty?'transparent':'#21262d'}">
+      <span style="color:${empty?'#3d4451':'#8b949e'};font-size:10px">${label}</span>
+      <span style="color:${empty?'#3d4451':'#e6edf3'};font-size:10px;font-weight:${empty?'400':'600'}">${val}</span>
+    </div>`;
+  }).join('');
   document.getElementById('macro-meals').innerHTML =
-    `<div style="margin-bottom:4px">${mealTags}</div><span style="color:${rem > 0 ? '#fbbf24' : '#f87171'}"><b>${rem > 0 ? rem.toLocaleString() + ' cal remaining' : '🔴 over by ' + Math.abs(rem) + ' cal'}</b></span>`;
+    `<div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-bottom:5px">${mealRows}</div>` +
+    `<div style="font-size:10px;color:${rem > 0 ? '#fbbf24' : '#f87171'};text-align:right"><b>${rem > 0 ? rem.toLocaleString() + ' cal left' : '🔴 over by ' + Math.abs(rem)}</b></div>`;
 }
 
 const GARMIN_FALLBACK = [
