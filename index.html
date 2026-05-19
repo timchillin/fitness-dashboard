@@ -443,9 +443,13 @@ async function loadGarmin() {
   const el = document.getElementById('activity-list');
   el.innerHTML = renderActivities(GARMIN_FALLBACK, false);
   try {
+    const now = new Date();
+    const from = new Date(now); from.setDate(from.getDate() - 14);
+    const fromDate = from.toISOString().slice(0, 10);
+    const toDate = now.toISOString().slice(0, 10);
     const raw = await window.cowork.callMcpTool(
       'mcp__6c0716b5-8606-4d50-9f8a-1e0b6b581c0d__list_activities',
-      { limit: 7 }
+      { from_date: fromDate, to_date: toDate, limit: 15 }
     );
     const acts = Array.isArray(raw) ? raw
       : Array.isArray(raw?.result) ? raw.result
