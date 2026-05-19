@@ -363,6 +363,10 @@ function setMacros(cal, pro, carb, fat, meals) {
       const hasFoods = meal.foods && meal.foods.length > 0;
       const mealCal = meal.cal || 0;
       const empty = mealCal === 0 && !hasFoods;
+      const r = v => Math.round(v * 10) / 10;
+      const totalP = hasFoods ? r(meal.foods.reduce((s,f) => s+(f.p||0), 0)) : 0;
+      const totalC = hasFoods ? r(meal.foods.reduce((s,f) => s+(f.c||0), 0)) : 0;
+      const totalF = hasFoods ? r(meal.foods.reduce((s,f) => s+(f.f||0), 0)) : 0;
       const foodRows = hasFoods ? meal.foods.map(f => `
         <div style="display:flex;align-items:center;gap:2px;padding:1px 0;border-top:1px solid #21262d;font-size:9px;min-width:0">
           <span style="flex:1;color:#c9d1d9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${f.n}">${f.n}</span>
@@ -371,10 +375,11 @@ function setMacros(cal, pro, carb, fat, meals) {
           <span style="color:#f87171;white-space:nowrap;margin-left:2px">${f.f}f</span>
           <span style="color:#fbbf24;font-weight:700;white-space:nowrap;margin-left:3px;min-width:22px;text-align:right">${f.cal}</span>
         </div>`).join('') : '';
+      const macroTotals = !empty ? `<span style="color:#a78bfa;font-size:9px">${totalP}p</span><span style="color:#60a5fa;font-size:9px;margin-left:3px">${totalC}c</span><span style="color:#f87171;font-size:9px;margin-left:3px">${totalF}f</span>` : '';
       return `<div style="background:#0d1117;border:1px solid ${empty?'#21262d':'#30363d'};border-radius:6px;padding:5px 7px;min-width:0">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:${hasFoods?2:0}px">
           <span style="font-size:10px;font-weight:700;color:${empty?'#3d4451':'#8b949e'}">${meal.n}</span>
-          <span style="font-size:10px;font-weight:700;color:${empty?'#3d4451':'#fbbf24'}">${mealCal ? mealCal+'cal' : '—'}</span>
+          <span style="display:flex;align-items:center;gap:3px">${macroTotals}<span style="font-size:10px;font-weight:700;color:${empty?'#3d4451':'#fbbf24'};margin-left:${empty?0:4}px">${mealCal ? mealCal+'cal' : '—'}</span></span>
         </div>${foodRows}</div>`;
     });
     mealsHtml = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">${mealCards.join('')}</div>`;
@@ -401,13 +406,15 @@ function setMacros(cal, pro, carb, fat, meals) {
 }
 
 const GARMIN_FALLBACK = [
+  { start_time:'2026-05-18T22:06:18Z', activity_name:'Strength', activity_type:'STRENGTH_TRAINING', duration_seconds:6366, calories:522, average_heart_rate_in_beats_per_minute:105, max_heart_rate_in_beats_per_minute:129 },
+  { start_time:'2026-05-17T16:24:56Z', activity_name:'Strength', activity_type:'STRENGTH_TRAINING', duration_seconds:6050, calories:550, average_heart_rate_in_beats_per_minute:107, max_heart_rate_in_beats_per_minute:167 },
   { start_time:'2026-05-16T18:48:58Z', activity_name:'Strength', activity_type:'STRENGTH_TRAINING', duration_seconds:5602, calories:505, average_heart_rate_in_beats_per_minute:110, max_heart_rate_in_beats_per_minute:138 },
   { start_time:'2026-05-16T14:18:07Z', activity_name:'Indoor Cycling', activity_type:'INDOOR_CYCLING', duration_seconds:3339, calories:254, average_heart_rate_in_beats_per_minute:96, max_heart_rate_in_beats_per_minute:122 },
-  { start_time:'2026-05-15T18:29:10Z', activity_name:'Strength (Legs)', activity_type:'STRENGTH_TRAINING', duration_seconds:10199, calories:675, average_heart_rate_in_beats_per_minute:93, max_heart_rate_in_beats_per_minute:144 },
+  { start_time:'2026-05-15T18:29:10Z', activity_name:'Strength', activity_type:'STRENGTH_TRAINING', duration_seconds:10199, calories:675, average_heart_rate_in_beats_per_minute:93, max_heart_rate_in_beats_per_minute:144 },
   { start_time:'2026-05-14T22:07:33Z', activity_name:'Strength', activity_type:'STRENGTH_TRAINING', duration_seconds:4043, calories:366, average_heart_rate_in_beats_per_minute:108, max_heart_rate_in_beats_per_minute:125 },
   { start_time:'2026-05-12T21:04:03Z', activity_name:'Strength', activity_type:'STRENGTH_TRAINING', duration_seconds:4730, calories:389, average_heart_rate_in_beats_per_minute:105, max_heart_rate_in_beats_per_minute:126 },
   { start_time:'2026-05-11T23:24:26Z', activity_name:'Strength', activity_type:'STRENGTH_TRAINING', duration_seconds:3815, calories:344, average_heart_rate_in_beats_per_minute:107, max_heart_rate_in_beats_per_minute:153 },
-  { start_time:'2026-05-10T20:14:26Z', activity_name:'Strength', activity_type:'STRENGTH_TRAINING', duration_seconds:3594, calories:320, average_heart_rate_in_beats_per_minute:108, max_heart_rate_in_beats_per_minute:137 },
+  { start_time:'2026-05-11T01:41:16Z', activity_name:'Strength', activity_type:'STRENGTH_TRAINING', duration_seconds:3380, calories:297, average_heart_rate_in_beats_per_minute:104, max_heart_rate_in_beats_per_minute:137 },
 ];
 
 function renderActivities(acts, isLive) {
