@@ -406,15 +406,15 @@ function setMacros(cal, pro, carb, fat, meals) {
 }
 
 const GARMIN_FALLBACK = [
+  { start_time:'2026-05-24T22:43:55Z', activity_name:'Strength', activity_type:'STRENGTH_TRAINING', duration_seconds:4295, calories:378, average_heart_rate_in_beats_per_minute:102, max_heart_rate_in_beats_per_minute:141 },
+  { start_time:'2026-05-22T19:22:22Z', activity_name:'Strength', activity_type:'STRENGTH_TRAINING', duration_seconds:3537, calories:313, average_heart_rate_in_beats_per_minute:103, max_heart_rate_in_beats_per_minute:146 },
+  { start_time:'2026-05-21T19:53:29Z', activity_name:'Strength', activity_type:'STRENGTH_TRAINING', duration_seconds:3071, calories:271, average_heart_rate_in_beats_per_minute:102, max_heart_rate_in_beats_per_minute:138 },
+  { start_time:'2026-05-20T18:01:10Z', activity_name:'Strength', activity_type:'STRENGTH_TRAINING', duration_seconds:4355, calories:377, average_heart_rate_in_beats_per_minute:102, max_heart_rate_in_beats_per_minute:143 },
   { start_time:'2026-05-18T22:06:18Z', activity_name:'Strength', activity_type:'STRENGTH_TRAINING', duration_seconds:6366, calories:522, average_heart_rate_in_beats_per_minute:105, max_heart_rate_in_beats_per_minute:129 },
   { start_time:'2026-05-17T16:24:56Z', activity_name:'Strength', activity_type:'STRENGTH_TRAINING', duration_seconds:6050, calories:550, average_heart_rate_in_beats_per_minute:107, max_heart_rate_in_beats_per_minute:167 },
   { start_time:'2026-05-16T18:48:58Z', activity_name:'Strength', activity_type:'STRENGTH_TRAINING', duration_seconds:5602, calories:505, average_heart_rate_in_beats_per_minute:110, max_heart_rate_in_beats_per_minute:138 },
   { start_time:'2026-05-16T14:18:07Z', activity_name:'Indoor Cycling', activity_type:'INDOOR_CYCLING', duration_seconds:3339, calories:254, average_heart_rate_in_beats_per_minute:96, max_heart_rate_in_beats_per_minute:122 },
   { start_time:'2026-05-15T18:29:10Z', activity_name:'Strength', activity_type:'STRENGTH_TRAINING', duration_seconds:10199, calories:675, average_heart_rate_in_beats_per_minute:93, max_heart_rate_in_beats_per_minute:144 },
-  { start_time:'2026-05-14T22:07:33Z', activity_name:'Strength', activity_type:'STRENGTH_TRAINING', duration_seconds:4043, calories:366, average_heart_rate_in_beats_per_minute:108, max_heart_rate_in_beats_per_minute:125 },
-  { start_time:'2026-05-12T21:04:03Z', activity_name:'Strength', activity_type:'STRENGTH_TRAINING', duration_seconds:4730, calories:389, average_heart_rate_in_beats_per_minute:105, max_heart_rate_in_beats_per_minute:126 },
-  { start_time:'2026-05-11T23:24:26Z', activity_name:'Strength', activity_type:'STRENGTH_TRAINING', duration_seconds:3815, calories:344, average_heart_rate_in_beats_per_minute:107, max_heart_rate_in_beats_per_minute:153 },
-  { start_time:'2026-05-11T01:41:16Z', activity_name:'Strength', activity_type:'STRENGTH_TRAINING', duration_seconds:3380, calories:297, average_heart_rate_in_beats_per_minute:104, max_heart_rate_in_beats_per_minute:137 },
 ];
 
 function renderActivities(acts, isLive) {
@@ -464,8 +464,30 @@ async function loadGarmin() {
 }
 
 const MACRO_DATA = {
-  '2026-05-20': { cal:1125, pro:62, carb:171, fat:20, meals:[{ n:'M1', cal:655, foods:[{ n:'Breakfast', qty:'via Dispatch', cal:655, p:33, c:95, f:14 }] }, { n:'M2', cal:0, foods:[] }, { n:'Pre', cal:0, foods:[] }, { n:'Post', cal:470, foods:[{ n:'Fruity Pebbles', qty:'80g', cal:320, p:3, c:72, f:3.0 }, { n:'ISO100 Whey', qty:'1 scoop', cal:120, p:25, c:3, f:0.5 }, { n:'Unsw. Almond Milk', qty:'1 cup', cal:30, p:1, c:1, f:2.5 }] }, { n:'M3', cal:0, foods:[] }, { n:'M4', cal:0, foods:[] }] },
-  '2026-05-20': { cal:1125, pro:62, carb:171, fat:20, meals:[
+  '2026-05-25': { cal:622, pro:36.1, carb:101, fat:9.4, meals:[{ n:'M1', cal:622, foods:[{ n:'Egg Whites', qty:'¾ cup', cal:93, p:20, c:1, f:0 }, { n:'DKB Cinnamon Raisin Bagel', qty:'1', cal:270, p:11, c:53, f:2.5 }, { n:'Sourdough', qty:'1 slice', cal:90, p:3, c:17, f:0.5 }, { n:'Banana', qty:'120g', cal:105, p:1.3, c:27, f:0.4 }, { n:'Avocado', qty:'40g', cal:64, p:0.8, c:3, f:6 }] }, { n:'M2', cal:0, foods:[] }, { n:'Pre', cal:0, foods:[] }, { n:'Post', cal:0, foods:[] }, { n:'M3', cal:0, foods:[] }, { n:'M4', cal:0, foods:[] }] },
+  '2026-05-25': { cal:622, pro:36.1, carb:101, fat:9.4, meals:[
+    { n:'M1', cal:622, foods:[
+      { n:'Egg Whites',             qty:'¾ cup',  cal:93,  p:20,  c:1,  f:0   },
+      { n:'DKB Cinn. Raisin Bagel', qty:'1',      cal:270, p:11,  c:53, f:2.5 },
+      { n:'Sourdough',              qty:'1 slice', cal:90,  p:3,   c:17, f:0.5 },
+      { n:'Banana',                 qty:'120g',   cal:105, p:1.3, c:27, f:0.4 },
+      { n:'Avocado',                qty:'40g',    cal:64,  p:0.8, c:3,  f:6   }
+    ]},
+    { n:'M2', cal:0, foods:[]},
+    { n:'Pre', cal:0, foods:[]},
+    { n:'Post', cal:0, foods:[]},
+    { n:'M3', cal:0, foods:[]},
+    { n:'M4', cal:0, foods:[]}
+  ]},
+  '2026-05-21': { cal:378, pro:34.5, carb:56, fat:2.7, weight:194.0, meals:[
+    { n:'M1', cal:0, foods:[]},
+    { n:'M2', cal:0, foods:[]},
+    { n:'Pre', cal:378, foods:[{ n:'Cream of Rice', qty:'40g', cal:160, p:3, c:36, f:0 }, { n:'Ryse Whey', qty:'50g', cal:163, p:31, c:6, f:2.5 }, { n:'Blueberries', qty:'70g', cal:40, p:0.5, c:10, f:0.2 }, { n:'Honey', qty:'5g', cal:15, p:0, c:4, f:0 }]},
+    { n:'Post', cal:0, foods:[]},
+    { n:'M3', cal:0, foods:[]},
+    { n:'M4', cal:0, foods:[]}
+  ]},
+  '2026-05-20': { cal:1125, pro:62, carb:171, fat:20, weight:190.0, meals:[
     { n:'M1', cal:655, foods:[{ n:'Breakfast (Dispatch)', qty:'', cal:655, p:33, c:95, f:14 }]},
     { n:'M2', cal:0, foods:[]},
     { n:'Pre', cal:0, foods:[]},
@@ -473,7 +495,7 @@ const MACRO_DATA = {
     { n:'M3', cal:0, foods:[]},
     { n:'M4', cal:0, foods:[]}
   ]},
-  '2026-05-19': { cal:2922, pro:268.5, carb:288.0, fat:81.1, meals:[
+  '2026-05-19': { cal:2922, pro:268.5, carb:288.0, fat:81.1, weight:186.4, meals:[
     { n:'M1', cal:624, foods:[{ n:'Banana', qty:'120g', cal:107, p:1.3, c:27.4, f:0.4 }, { n:'Sourdough', qty:'1 slice', cal:90, p:3, c:18, f:0.5 }, { n:'CF Rolls', qty:'×2', cal:220, p:6, c:44, f:2.0 }, { n:'Egg Whites', qty:'½ cup', cal:63, p:13, c:1, f:0.2 }, { n:'Whole Eggs', qty:'×2', cal:144, p:12, c:0.8, f:10.0 }]},
     { n:'M2', cal:398, foods:[{ n:'Oats', qty:'50g', cal:190, p:6.6, c:33.9, f:3.3 }, { n:'Ryse Whey', qty:'40g', cal:130, p:25, c:5, f:2.0 }, { n:'Blueberries', qty:'100g', cal:57, p:0.7, c:14.5, f:0.3 }, { n:'Honey', qty:'7g', cal:21, p:0, c:5.6, f:0 }]},
     { n:'M3', cal:728, foods:[{ n:'Chicken Breast', qty:'8oz', cal:373, p:70.4, c:0, f:8.1 }, { n:'Pineapple', qty:'300g', cal:150, p:1.5, c:39.3, f:0.3 }, { n:'Mixed Greens', qty:'1 srv', cal:20, p:1.5, c:3.5, f:0.3 }, { n:'Walnuts', qty:'1 oz', cal:185, p:4.3, c:3.9, f:18.5 }]},
@@ -481,7 +503,7 @@ const MACRO_DATA = {
     { n:'Pre', cal:0, foods:[]},
     { n:'Post', cal:470, foods:[{ n:'Fruity Pebbles', qty:'80g', cal:320, p:3, c:72, f:3.0 }, { n:'ISO100 Whey', qty:'1 scoop', cal:120, p:25, c:3, f:0.5 }, { n:'Almond Milk', qty:'1 cup', cal:30, p:1, c:1, f:2.5 }]}
   ]},
-  '2026-05-18': { cal:3990, pro:270.7, carb:623.1, fat:50.0, meals:[
+  '2026-05-18': { cal:3990, pro:270.7, carb:623.1, fat:50.0, weight:183.0, meals:[
     { n:'M1', cal:683, foods:[
       { n:'Egg Whites',    qty:'3/4 cup', cal:95,  p:20,  c:1,    f:0.5 },
       { n:"Dave's Bagel", qty:'1',       cal:270, p:11,  c:52,   f:2   },
@@ -543,9 +565,18 @@ const MACRO_DATA = {
 function loadMacrosFromStorage() {
   const now = new Date();
   const today = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
-  const data = MACRO_DATA[today];
+  let data = MACRO_DATA[today];
+  let dataDate = today;
+  if (!data) {
+    const sorted = Object.keys(MACRO_DATA).sort().reverse();
+    if (sorted.length > 0) { dataDate = sorted[0]; data = MACRO_DATA[dataDate]; }
+  }
   if (data) {
     setMacros(data.cal, data.pro, data.carb, data.fat, data.meals);
+    if (data.weight) document.getElementById('pill-weight').textContent = '⚖️ ' + data.weight + ' lbs';
+    if (dataDate !== today) {
+      document.getElementById('hdr-date').textContent += ' · showing ' + dataDate;
+    }
   } else {
     setMacros(0, 0, 0, 0, ['🍳 Meal 1 —','🍽️ Meal 2 —','💪 Pre-WO —','🏁 Post-WO —','🍽️ Meal 3 —','🍽️ Meal 4 —']);
   }
